@@ -1,0 +1,34 @@
+##Create dotplot with top pathways up and downregulated in STM-infected HIOs
+#Load packages
+library('dplyr')
+library(ggplot2)
+
+#load samples
+toppathways<-read.csv('Annotated R scripts mutant paper/gene lists/fig3b_top_pathways.csv')
+mut_paths<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/reactome_combined.csv')
+
+#calculate log10pvalue for reactome pathways
+mut_paths$log10pvalue<-c(-log10(mut_paths$pvalue))
+
+#filter pathways so significant
+mut_paths<-filter(mut_paths,pvalue<0.05)
+
+#name rows as pathway names and subset mutant reactome data with these pathways
+row.names(toppathways)<-toppathways$Pathways
+toppathways$Description<-toppathways$Pathways
+mut_paths_total<-right_join(mut_paths, toppathways)
+
+mut_top_paths <- subset(mut_paths_total,mut_paths_total$Description%in%rownames(toppathways))
+
+#set pathway and sample order
+mut_top_paths$Major.Pathway<-factor(mut_top_paths$Major.Pathway,levels=c('Cytokine Signaling in Immune system','Innate Immune System','Cell Cycle'))
+mut_top_paths$injection<-factor(mut_top_paths$injection,levels=c('SPI2','SPI1','STM'))
+
+#Plot results into dot plot
+#Gene ratio on x-axis and log10pvalue as dot size
+ggplot(mut_top_paths)+
+  geom_point(aes(x=gene_ratio,y=Description,size=log10pvalue,color=injection,alpha=0.25))+
+  scale_x_continuous(limits=c(-.5,.8),labels=abs)+facet_grid(rows = vars(Major.Pathway),cols=vars(time),
+                                                             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))+
+  geom_vline(xintercept = 0, lty = 2)
+
