@@ -1,0 +1,39 @@
+###Generate heatmaps plotting log2(Foldchange) with cytokine, chemokine and antimicrobial peptide gene lists
+#Load packages
+library(dplyr)
+library(ggplot2)
+
+#Load combined diff expression file
+#Load chemokine cytyokine and AMP gene lists to make heatmaps
+mut_genes<-read.csv('Annotated R scripts mutant paper/significant/mut_significant_atleastone_reformatted.csv')
+cyto_list<-read.csv('Annotated R scripts mutant paper/gene lists/cytokine gene list.csv')
+chemo_list<-read.csv('Annotated R scripts mutant paper/gene lists/chemokine gene list.csv')
+AMP_list<-read.csv('Annotated R scripts mutant paper/gene lists/AMP gene list.csv')
+
+#Subset data with gene lists
+mut_cyto<-subset(mut_genes,mut_genes$symbol%in%cyto_list$symbol)
+mut_chemo<-subset(mut_genes,mut_genes$symbol%in%chemo_list$symbol)
+mut_AMP <- subset(mut_genes,mut_genes$symbol%in%AMP_list$symbol)
+
+
+#set sample order
+#Plot results in heatmap
+#cytokines
+mut_cyto$injection<-factor(mut_cyto$injection,levels=c('STM','SPI1','SPI2'))
+ggplot(mut_cyto, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-4, 12))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+#chemokines
+mut_chemo$injection<-factor(mut_chemo$injection,levels=c('STM','SPI1','SPI2'))
+ggplot(mut_chemo, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-2, 8))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+
+#Antimicrobial Peptides
+mut_AMP$injection<-factor(mut_AMP$injection,levels=c('STM','SPI1','SPI2'))
+ggplot(mut_AMP, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-4, 10))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
