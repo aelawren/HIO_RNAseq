@@ -1,0 +1,154 @@
+##Perform pathway enrichment from Reactome database on up and downregulated genes using ReactomePA
+
+files<-list.files("Annotated R scripts mutant paper/significant/")
+files
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(ReactomePA)
+
+#Pathway enrichment in Reactome with significant upregulated genes
+for(i in seq(files)){
+  sample<-gsub('_significant.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts mutant paper/significant/",files[i]))%>%
+    filter(i,log2FoldChange>0)
+  up.list<-input$entrez
+  x<-enrichPathway(gene=up.list,pvalueCutoff = 1,qvalueCutoff=1, minGSSize=10, maxGSSize=1000,readable = T)
+  head(as.data.frame(x))
+  out.dir<-('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/')
+  write.csv(x, file = paste0(out.dir,sample,'_reactome_upregulated','.csv'))
+}
+
+#Pathway enrichment in Reactome with significant downregulated genes
+for(i in seq(files)){
+  sample<-gsub('_significant.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts mutant paper/significant/",files[i]))%>%
+    filter(i,log2FoldChange<0)
+  up.list<-input$entrez
+  x<-enrichPathway(gene=up.list,pvalueCutoff = 1,qvalueCutoff=1, minGSSize=10, maxGSSize=1000,readable = T)
+  head(as.data.frame(x))
+  out.dir<-('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/')
+  write.csv(x, file = paste0(out.dir,sample,'_reactome_downregulated','.csv'))
+}
+
+#create function to calculate gene ratios
+convertBgRatio<-function(d1){
+  BgRatio<-gsub('/10554','',d1$BgRatio)
+  BgRatio<-as.numeric(BgRatio)
+  d1$BgRatio<-BgRatio
+  Count<-as.numeric(d1$Count)
+  d1$Count<-Count
+  gene_ratio<-Count/BgRatio
+  d1$gene_ratio<-gene_ratio
+  cbind(d1,gene_ratio)
+  
+}
+
+#Load samples
+STM_2h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/STM_2h_over_PBS_2h_reactome_upregulated.csv')
+STM_8h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/STM_8h_over_PBS_8h_reactome_upregulated.csv')
+SPI1_2h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI1_2h_over_PBS_2h_reactome_upregulated.csv')
+SPI1_8h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI1_8h_over_PBS_8h_reactome_upregulated.csv')
+SPI2_2h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI2_2h_over_PBS_2h_reactome_upregulated.csv')
+SPI2_8h_up<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI2_8h_over_PBS_8h_reactome_upregulated.csv')
+
+STM_2h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/STM_2h_over_PBS_2h_reactome_downregulated.csv')
+STM_8h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/STM_8h_over_PBS_8h_reactome_downregulated.csv')
+SPI1_2h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI1_2h_over_PBS_2h_reactome_downregulated.csv')
+SPI1_8h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI1_8h_over_PBS_8h_reactome_downregulated.csv')
+SPI2_2h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI2_2h_over_PBS_2h_reactome_downregulated.csv')
+SPI2_8h_down<-read.csv('Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI2_8h_over_PBS_8h_reactome_downregulated.csv')
+
+#run function to get gene ratios and annotate files with injection, timepoint and direction
+STM_2h_up<-convertBgRatio(STM_2h_up)
+STM_2h_up<-STM_2h_up[,!duplicated(colnames(STM_2h_up))]
+STM_2h_up$injection<-c('STM')
+STM_2h_up$time<-c('2.5hpi')
+STM_2h_up$direction<-c('up')
+write.csv(STM_2h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/STM_2h_over_PBS_2h_reactome_upregulated.csv')
+
+STM_8h_up<-convertBgRatio(STM_8h_up)
+STM_8h_up<-STM_8h_up[,!duplicated(colnames(STM_8h_up))]
+STM_8h_up$injection<-c('STM')
+STM_8h_up$time<-c('8hpi')
+STM_8h_up$direction<-c('up')
+write.csv(STM_8h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/STM_8h_over_PBS_8h_reactome_upregulated.csv')
+
+SPI1_2h_up<-convertBgRatio(SPI1_2h_up)
+SPI1_2h_up<-SPI1_2h_up[,!duplicated(colnames(SPI1_2h_up))]
+SPI1_2h_up$injection<-c('SPI1')
+SPI1_2h_up$time<-c('2.5hpi')
+SPI1_2h_up$direction<-c('up')
+write.csv(SPI1_2h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI1_2h_over_PBS_2h_reactome_upregulated.csv')
+
+SPI1_8h_up<-convertBgRatio(SPI1_8h_up)
+SPI1_8h_up<-SPI1_8h_up[,!duplicated(colnames(SPI1_8h_up))]
+SPI1_8h_up$injection<-c('SPI1')
+SPI1_8h_up$time<-c('8hpi')
+SPI1_8h_up$direction<-c('up')
+write.csv(SPI1_8h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI1_8h_over_PBS_8h_reactome_upregulated.csv')
+
+SPI2_2h_up<-convertBgRatio(SPI2_2h_up)
+SPI2_2h_up<-SPI2_2h_up[,!duplicated(colnames(SPI2_2h_up))]
+SPI2_2h_up$injection<-c('SPI2')
+SPI2_2h_up$time<-c('2.5hpi')
+SPI2_2h_up$direction<-c('up')
+write.csv(SPI2_2h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI2_2h_over_PBS_2h_reactome_upregulated.csv')
+
+SPI2_8h_up<-convertBgRatio(SPI2_8h_up)
+SPI2_8h_up<-SPI2_8h_up[,!duplicated(colnames(SPI2_8h_up))]
+SPI2_8h_up$injection<-c('SPI2')
+SPI2_8h_up$time<-c('8hpi')
+SPI2_8h_up$direction<-c('up')
+write.csv(SPI2_8h_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/upregulated/SPI2_8h_over_PBS_8h_reactome_upregulated.csv')
+
+STM_2h_down<-convertBgRatio(STM_2h_down)
+STM_2h_down<-STM_2h_down[,!duplicated(colnames(STM_2h_down))]
+STM_2h_down$injection<-c('STM')
+STM_2h_down$time<-c('2.5hpi')
+STM_2h_down$direction<-c('down')
+write.csv(STM_2h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/STM_2h_over_PBS_2h_reactome_downregulated.csv')
+
+STM_8h_down<-convertBgRatio(STM_8h_down)
+STM_8h_down<-STM_8h_down[,!duplicated(colnames(STM_8h_down))]
+STM_8h_down$injection<-c('STM')
+STM_8h_down$time<-c('8hpi')
+STM_8h_down$direction<-c('down')
+write.csv(STM_8h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/STM_8h_over_PBS_8h_reactome_downregulated.csv')
+
+SPI1_2h_down<-convertBgRatio(SPI1_2h_down)
+SPI1_2h_down<-SPI1_2h_down[,!duplicated(colnames(SPI1_2h_down))]
+SPI1_2h_down$injection<-c('SPI1')
+SPI1_2h_down$time<-c('2.5hpi')
+SPI1_2h_down$direction<-c('down')
+write.csv(SPI1_2h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI1_2h_over_PBS_2h_reactome_downregulated.csv')
+
+SPI1_8h_down<-convertBgRatio(SPI1_8h_down)
+SPI1_8h_down<-SPI1_8h_down[,!duplicated(colnames(SPI1_8h_down))]
+SPI1_8h_down$injection<-c('SPI1')
+SPI1_8h_down$time<-c('8hpi')
+SPI1_8h_down$direction<-c('down')
+write.csv(SPI1_8h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI1_8h_over_PBS_8h_reactome_downregulated.csv')
+
+SPI2_2h_down<-convertBgRatio(SPI2_2h_down)
+SPI2_2h_down<-SPI2_2h_down[,!duplicated(colnames(SPI2_2h_down))]
+SPI2_2h_down$injection<-c('SPI2')
+SPI2_2h_down$time<-c('2.5hpi')
+SPI2_2h_down$direction<-c('down')
+write.csv(SPI2_2h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI2_2h_over_PBS_2h_reactome_downregulated.csv')
+
+SPI2_8h_down<-convertBgRatio(SPI2_8h_down)
+SPI2_8h_down<-SPI2_8h_down[,!duplicated(colnames(SPI2_8h_down))]
+SPI2_8h_down$injection<-c('SPI2')
+SPI2_8h_down$time<-c('8hpi')
+SPI2_8h_down$direction<-c('down')
+write.csv(SPI2_8h_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/downregulated/SPI2_8h_over_PBS_8h_reactome_downregulated.csv')
+
+##combine into single dataframe
+mut_up<-rbind(STM_2h_up,STM_8h_up,SPI1_2h_up,SPI1_8h_up,SPI2_2h_up,SPI2_8h_up)
+mut_down<-rbind(STM_2h_down,STM_8h_down,SPI1_2h_down,SPI1_8h_down,SPI2_2h_down,SPI2_8h_down)
+mut<-rbind(mut_up,mut_down)
+write.csv(mut_up,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/reactome_combined_upregulated.csv')
+write.csv(mut_down,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/reactome_combined_downregulated.csv')
+mut_down$gene_ratio<-(-1*mut_down$gene_ratio)
+write.csv(mut,'Annotated R scripts mutant paper/results/Reactome pathway enrichment/reactome_combined.csv')
