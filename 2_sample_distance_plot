@@ -1,0 +1,46 @@
+###Calculating Euclidean distance between infection conditions
+
+
+##Load packages
+library('DESeq2')
+library('gplots')
+library('RColorBrewer')
+library(pheatmap)
+
+#load normalized count data
+seq_counts<-read.csv('complete-dataset_DESeq2-normalized-counts.csv')
+
+#Take average of rlog processed data for experimental replicates
+PBS_2h<-((seq_counts$PBS_2h.1+seq_counts$PBS_2h.2+seq_counts$PBS_2h.3+seq_counts$PBS_2h.4)/4)
+PBS_8h<-((seq_counts$PBS_8h.1+seq_counts$PBS_8h.2+seq_counts$PBS_8h.3+seq_counts$PBS_8h.4)/4)
+STM_2h<-((seq_counts$STM_2h.1+seq_counts$STM_2h.2+seq_counts$STM_2h.3+seq_counts$STM_2h.4)/4)
+STM_8h<-((seq_counts$STM_8h.1+seq_counts$STM_8h.2+seq_counts$STM_8h.3+seq_counts$STM_8h.4)/4)
+SPI1_2h<-((seq_counts$SPI1_2h.1+seq_counts$SPI1_2h.2+seq_counts$SPI1_2h.3+seq_counts$SPI1_2h.4)/4)
+SPI1_8h<-((seq_counts$SPI1_8h.1+seq_counts$SPI1_8h.2+seq_counts$SPI1_8h.3+seq_counts$SPI1_8h.4)/4)
+SPI2_2h<-((seq_counts$SPI2_2h.1+seq_counts$SPI2_2h.2+seq_counts$SPI2_2h.3+seq_counts$SPI2_2h.4)/4)
+SPI2_8h<-((seq_counts$SPI2_8h.1+seq_counts$SPI2_8h.2+seq_counts$SPI2_8h.3+seq_counts$SPI2_8h.4)/4)
+
+#Add samples to new dataframe
+sample_dist<-NULL
+sample_dist$PBS_2h<-PBS_2h
+sample_dist<-as.data.frame(sample_dist)
+sample_dist$PBS_8h<-PBS_8h
+sample_dist$STM_2h<-STM_2h
+sample_dist$STM_8h<-STM_8h
+sample_dist$SPI1_2h<-SPI1_2h
+sample_dist$SPI1_8h<-SPI1_8h
+sample_dist$SPI2_2h<-SPI2_2h
+sample_dist$SPI2_8h<-SPI2_8h
+
+#Calculate sample distance for averaged samples
+sampleDists<-dist(t((sample_dist)))
+sampleDists
+class(sampleDists)
+sampleDistMatrix<-as.matrix(sampleDists)
+
+#plot results
+rownames(sampleDistMatrix) <- c( 'PBS 2.5hpi','PBS 8hpi','STM 2.5hpi','STM 8hpi','SPI1 2.5hpi','SPI1 8hpi','SPI2 2.5hpi','SPI2 8hpi')
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix, color = colors)
+
+
