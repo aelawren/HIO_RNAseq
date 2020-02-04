@@ -1,0 +1,135 @@
+##Filter diff_expression files so that p<0.05 and combine into dataframe so that genes are significant in at least one infection condition
+
+#Load packages
+library(magrittr)
+library(dplyr)
+library(here)
+
+##Generating diff expression files with significant genes
+#each condition in a separate file
+#List files
+files<-list.files("Annotated R scripts mutant paper/diffexpress/")
+files
+
+#Filter genes so pvalue<0.05 and save as new .csv
+for(i in seq(files)){
+  sample<-gsub('_diffexpress.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts mutant paper/diffexpress/",files[i]))%>%
+    filter(i,pvalue<0.05)
+  out.dir<-('Annotated R scripts mutant paper/significant/')
+  write.csv(input, file = paste0(out.dir,sample,'_significant','.csv'))
+}
+
+
+
+##generate .csv file with list of genes that are significant in at least one condition
+#combine into one dataframe
+gene_filter <- function(d1, d2, d3, d4,d5,d6,
+                        label1, label2, label3, label4,label5,label6,p = 1){
+  
+  # Get list of genes - Must be significant in at least one sample (pooling together all mutants or all serovars)
+  genes <- NULL
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    a <- filter(i, pvalue <= p) %>% 
+      select(symbol)
+    
+    print(paste(nrow(a), 'significant genes'))
+    
+    genes <- rbind(genes, a) %>% 
+      unique()
+  }
+  
+  print(paste(nrow(genes), 'genes significant in at least one sample with p value cutoff at', p))
+  
+  
+  # Get info for each gene from each sample
+  genes1 <- genes
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    
+    
+    a <- filter(i, symbol %in% genes$symbol) %>% 
+      select(c(symbol, log2FoldChange, pvalue))
+    
+    genes1 <- left_join(genes1, a, by = 'symbol')
+    
+  }
+  colnames(genes1)[2:13] <- c(paste0(label1,'_log2FoldChange'), paste0(label1, '_pvalue'),
+                              paste0(label2,'_log2FoldChange'), paste0(label2, '_pvalue'),
+                              paste0(label3,'_log2FoldChange'), paste0(label3, '_pvalue'),
+                              paste0(label4,'_log2FoldChange'), paste0(label4, '_pvalue'),
+                              paste0(label5,'_log2FoldChange'), paste0(label5, '_pvalue'),
+                              paste0(label6,'_log2FoldChange'), paste0(label6, '_pvalue')
+  )
+  
+  
+  
+  genes1 <- genes1[,c(1,2,4,6,8,10,12,3,5,7,9,11,13)]
+  return(genes1)
+}
+
+# Load samples
+STM_2h<-read.csv('Annotated R scripts mutant paper/diffexpress/STM_2h_over_PBS_2h_diffexpress.csv')
+STM_8h<-read.csv('Annotated R scripts mutant paper/diffexpress/STM_8h_over_PBS_8h_diffexpress.csv')
+SPI1_2h<-read.csv('Annotated R scripts mutant paper/diffexpress/SPI1_2h_over_PBS_2h_diffexpress.csv')
+SPI1_8h<-read.csv('Annotated R scripts mutant paper/diffexpress/SPI1_8h_over_PBS_8h_diffexpress.csv')
+SPI2_2h<-read.csv('Annotated R scripts mutant paper/diffexpress/SPI2_2h_over_PBS_2h_diffexpress.csv')
+SPI2_8h<-read.csv('Annotated R scripts mutant paper/diffexpress/SPI2_8h_over_PBS_8h_diffexpress.csv')
+
+mut <- gene_filter(STM_2h, SPI1_2h, SPI2_2h,STM_8h,SPI1_8h,SPI2_8h, p = 0.05, 
+                   label1 = 'STM_2h', label2 = 'SPI1_2h', label3 = 'SPI2_2h',label4='STM_8h',label5 = 'SPI1_8h',label6 = 'SPI2_8h')
+head(mut)
+write.csv(mut,file='Annotated R scripts mutant paper/significant/mut_significant_atleastone.csv')
+
+#Reformat and add samples to new dataframe
+STM_2h_sig_genes<-NULL
+STM_2h_sig_genes$symbol<-mut$symbol
+STM_2h_sig_genes$log2FoldChange<-mut$STM_2h_log2FoldChange
+STM_2h_sig_genes<-as.data.frame(STM_2h_sig_genes)
+STM_2h_sig_genes$pvalue<-mut$STM_2h_pvalue
+STM_2h_sig_genes$injection<-c('STM')
+STM_2h_sig_genes$time<-c('2.5hpi')
+
+STM_8h_sig_genes<-NULL
+STM_8h_sig_genes$symbol<-mut$symbol
+STM_8h_sig_genes$log2FoldChange<-mut$STM_8h_log2FoldChange
+STM_8h_sig_genes<-as.data.frame(STM_8h_sig_genes)
+STM_8h_sig_genes$pvalue<-mut$STM_8h_pvalue
+STM_8h_sig_genes$injection<-c('STM')
+STM_8h_sig_genes$time<-c('8hpi')
+
+SPI1_2h_sig_genes<-NULL
+SPI1_2h_sig_genes$symbol<-mut$symbol
+SPI1_2h_sig_genes$log2FoldChange<-mut$SPI1_2h_log2FoldChange
+SPI1_2h_sig_genes<-as.data.frame(SPI1_2h_sig_genes)
+SPI1_2h_sig_genes$pvalue<-mut$SPI1_2h_pvalue
+SPI1_2h_sig_genes$injection<-c('SPI1')
+SPI1_2h_sig_genes$time<-c('2.5hpi')
+
+SPI1_8h_sig_genes<-NULL
+SPI1_8h_sig_genes$symbol<-mut$symbol
+SPI1_8h_sig_genes$log2FoldChange<-mut$SPI1_8h_log2FoldChange
+SPI1_8h_sig_genes<-as.data.frame(SPI1_8h_sig_genes)
+SPI1_8h_sig_genes$pvalue<-mut$SPI1_8h_pvalue
+SPI1_8h_sig_genes$injection<-c('SPI1')
+SPI1_8h_sig_genes$time<-c('8hpi')
+
+SPI2_2h_sig_genes<-NULL
+SPI2_2h_sig_genes$symbol<-mut$symbol
+SPI2_2h_sig_genes$log2FoldChange<-mut$SPI2_2h_log2FoldChange
+SPI2_2h_sig_genes<-as.data.frame(SPI2_2h_sig_genes)
+SPI2_2h_sig_genes$pvalue<-mut$SPI2_2h_pvalue
+SPI2_2h_sig_genes$injection<-c('SPI2')
+SPI2_2h_sig_genes$time<-c('2.5hpi')
+
+SPI2_8h_sig_genes<-NULL
+SPI2_8h_sig_genes$symbol<-mut$symbol
+SPI2_8h_sig_genes$log2FoldChange<-mut$SPI2_8h_log2FoldChange
+SPI2_8h_sig_genes<-as.data.frame(SPI2_8h_sig_genes)
+SPI2_8h_sig_genes$pvalue<-mut$SPI2_8h_pvalue
+SPI2_8h_sig_genes$injection<-c('SPI2')
+SPI2_8h_sig_genes$time<-c('8hpi')
+
+sig_genes<-rbind(STM_2h_sig_genes,STM_8h_sig_genes,SPI1_2h_sig_genes,SPI1_8h_sig_genes,SPI2_2h_sig_genes,SPI2_8h_sig_genes)
+write.csv(sig_genes,'Annotated R scripts mutant paper/significant/mut_significant_atleastone_reformatted.csv')
