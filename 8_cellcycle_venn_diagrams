@@ -1,0 +1,103 @@
+##venn diagrams comparing signficiantly downregulated genes in the cell cycle pathway
+
+#Load packages
+library(dplyr)
+library(eulerr)
+library(here)
+library(magrittr)
+library(tidyr)
+
+#read data(gene list and significant gene files):
+cellcycle_genes<-read.csv('Annotated R scripts mutant paper/gene lists/cell cycle gene list.csv')
+
+STM_2h<-read.csv('Annotated R scripts mutant paper/significant/STM_2h_over_PBS_2h_significant.csv')
+STM_8h<-read.csv('Annotated R scripts mutant paper/significant/STM_8h_over_PBS_8h_significant.csv')
+SPI1_2h<-read.csv('Annotated R scripts mutant paper/significant/SPI1_2h_over_PBS_2h_significant.csv')
+SPI1_8h<-read.csv('Annotated R scripts mutant paper/significant/SPI1_8h_over_PBS_8h_significant.csv')
+SPI2_2h<-read.csv('Annotated R scripts mutant paper/significant/SPI2_2h_over_PBS_2h_significant.csv')
+SPI2_8h<-read.csv('Annotated R scripts mutant paper/significant/SPI2_8h_over_PBS_8h_significant.csv')
+
+#subset genes with cell cycle gene list
+STM_2h_genes <- subset(STM_2h,STM_2h$symbol%in%cellcycle_genes$symbol)
+STM_8h_genes <- subset(STM_8h,STM_8h$symbol%in%cellcycle_genes$symbol)
+SPI1_2h_genes <- subset(SPI1_2h,SPI1_2h$symbol%in%cellcycle_genes$symbol)
+SPI1_8h_genes <- subset(SPI1_8h,SPI1_8h$symbol%in%cellcycle_genes$symbol)
+SPI2_2h_genes <- subset(SPI2_2h,SPI2_2h$symbol%in%cellcycle_genes$symbol)
+SPI2_8h_genes <- subset(SPI2_8h,SPI2_8h$symbol%in%cellcycle_genes$symbol)
+
+
+#label subsetted data with injection and time points:
+STM_2h_genes$label<-c('STM')
+STM_2h_genes$time<-c('2h')
+STM_8h_genes$label<-c('STM')
+STM_8h_genes$time<-c('8h')
+SPI1_2h_genes$label<-c('SPI1')
+SPI1_2h_genes$time<-c('2h')
+SPI1_8h_genes$label<-c('SPI1')
+SPI1_8h_genes$time<-c('8h')
+SPI2_2h_genes$label<-c('SPI2')
+SPI2_2h_genes$time<-c('2h')
+SPI2_8h_genes$label<-c('SPI2')
+SPI2_8h_genes$time<-c('8h')
+
+#combine data into one dataframe
+data2<-rbind(STM_2h_genes,STM_8h_genes,SPI1_2h_genes,SPI1_8h_genes,SPI2_2h_genes,SPI2_8h_genes)
+
+#write function to make venn diagrams with cell cycle genes
+make_venn <- function(df,x1,x2,x3,t, pvalue = 1, l2fc = 0, show_labels = T){
+  
+  # Set significance filter
+  df$signif <- ifelse(df$pvalue < pvalue & df$log2FoldChange < l2fc, 'Significant', 'Non significant')
+  
+  # want to compare all significant genes
+  incr <- filter(df, signif == 'Significant' & time == t) %>% 
+    select(c(symbol,label)) %>% 
+    arrange(label)
+  
+  
+  # Split into three groups by sample
+  a <- filter(incr, label == x1) %>% 
+    .$symbol
+  b <- filter(incr, label == x2) %>% 
+    .$symbol
+  c <- filter(incr, label == x3) %>% 
+    .$symbol
+  
+  # Calculate number of shared genes in each group
+  ABC <- length(c[c%in%a[a%in%b]])
+  AB <- length(a[a%in%b]) - ABC
+  AC <- length(a[a%in%c]) - ABC
+  A <- length(a) - AB -AC - ABC
+  BC <- length(b[b%in%c]) - ABC
+  BA <- length(b[b%in%a]) - ABC
+  B <- length(b)-BA-BC-ABC
+  C <- length(c)-AC-BC-ABC
+  
+  
+  # Formatting options
+  eulerr_options(pointsize = 14)
+  options(digits = 4)
+  
+  
+  # Input in the form of a named numeric vector
+  fit1 <- euler(c("A" = A, "B" = B, "C" = C,
+                  "A&B" = AB, "A&C" = AC, "B&C" = BC,
+                  "A&B&C" = ABC))
+  
+  diagram <- plot(fit1, 
+                  quantities = T,
+                  fill = c("lightblue", "lightcoral", "lemonchiffon"),
+                  lty = 1,
+                  labels = if(show_labels == F){
+                    F
+                  }else{
+                    c(x1,x2,x3)})
+  return(diagram)
+}
+
+m2 <- make_venn(data2, 'STM','SPI1','SPI2','2h', pvalue = 0.05, l2fc = 0,
+                show_labels = F)
+m2
+m8 <- make_venn(data2, 'STM','SPI1','SPI2','8h', pvalue = 0.05, l2fc = 0,
+                show_labels = F)
+m8
