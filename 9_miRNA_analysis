@@ -1,0 +1,123 @@
+###miRNA analysis using gprofiler2
+
+#load packages
+library('gprofiler2')
+library('dplyr')
+library(ggplot2)
+
+#load datasets
+STM_2h<-read.csv('Annotated R scripts mutant paper/significant/STM_2h_over_PBS_2h_significant.csv')
+STM_8h<-read.csv('Annotated R scripts mutant paper/significant/STM_8h_over_PBS_8h_significant.csv')
+SPI1_2h<-read.csv('Annotated R scripts mutant paper/significant/SPI1_2h_over_PBS_2h_significant.csv')
+SPI1_8h<-read.csv('Annotated R scripts mutant paper/significant/SPI1_8h_over_PBS_8h_significant.csv')
+SPI2_2h<-read.csv('Annotated R scripts mutant paper/significant/SPI2_2h_over_PBS_2h_significant.csv')
+SPI2_8h<-read.csv('Annotated R scripts mutant paper/significant/SPI2_8h_over_PBS_8h_significant.csv')
+
+#Filter for downregulated genes
+STM_2h_down<-filter(STM_2h,STM_2h$log2FoldChange<0)
+SPI1_2h_down<-filter(SPI1_2h,SPI1_2h$log2FoldChange<0)
+SPI2_2h_down<-filter(SPI2_2h,SPI2_2h$log2FoldChange<0)
+STM_8h_down<-filter(STM_8h,STM_8h$log2FoldChange<0)
+SPI1_8h_down<-filter(SPI1_8h,SPI1_8h$log2FoldChange<0)
+SPI2_8h_down<-filter(SPI2_8h,SPI2_8h$log2FoldChange<0)
+
+#Collect gene names from significantly downregulated datasets
+STM_2h_down_genes<-STM_2h_down$symbol
+SPI1_2h_down_genes<-SPI1_2h_down$symbol
+SPI2_2h_down_genes<-SPI2_2h_down$symbol
+STM_8h_down_genes<-STM_8h_down$symbol
+SPI1_8h_down_genes<-SPI1_8h_down$symbol
+SPI2_8h_down_genes<-SPI2_8h_down$symbol
+
+#get miRNA using gost function from gprofiler
+STM_2h_down_miRNA<-gost(query = STM_2h_down_genes,organism = 'hsapiens',user_threshold = 1)
+SPI1_2h_down_miRNA<-gost(query = SPI1_2h_down_genes,organism = 'hsapiens',user_threshold = 1)
+SPI2_2h_down_miRNA<-gost(query = SPI2_2h_down_genes,organism = 'hsapiens',user_threshold = 1)
+STM_8h_down_miRNA<-gost(query = STM_8h_down_genes,organism = 'hsapiens',user_threshold = 1)
+SPI1_8h_down_miRNA<-gost(query = SPI1_8h_down_genes,organism = 'hsapiens',user_threshold = 1)
+SPI2_8h_down_miRNA<-gost(query = SPI2_8h_down_genes,organism = 'hsapiens',user_threshold = 1)
+
+
+###Save as .csv
+#2.5hpi
+STM_2h_down_result<-STM_2h_down_miRNA[['result']]
+STM_2h_down_mat<-as.matrix(STM_2h_down_result)
+write.csv(STM_2h_down_mat,'STM_2h_down_miRNA.csv')
+SPI1_2h_down_result<-SPI1_2h_down_miRNA[['result']]
+SPI1_2h_down_mat<-as.matrix(SPI1_2h_down_result)
+write.csv(SPI1_2h_down_mat,'SPI1_2h_down_miRNA.csv')
+SPI2_2h_down_result<-SPI2_2h_down_miRNA[['result']]
+SPI2_2h_down_mat<-as.matrix(SPI2_2h_down_result)
+write.csv(SPI2_2h_down_mat,'SPI2_2h_down_miRNA.csv')
+#8hpi
+STM_8h_down_result<-STM_8h_down_miRNA[['result']]
+STM_8h_down_mat<-as.matrix(STM_8h_down_result)
+write.csv(STM_8h_down_mat,'STM_8h_down_miRNA.csv')
+SPI1_8h_down_result<-SPI1_8h_down_miRNA[['result']]
+SPI1_8h_down_mat<-as.matrix(SPI1_8h_down_result)
+write.csv(SPI1_8h_down_mat,'SPI1_8h_down_miRNA.csv')
+SPI2_8h_down_result<-SPI2_8h_down_miRNA[['result']]
+SPI2_8h_down_mat<-as.matrix(SPI2_8h_down_result)
+write.csv(SPI2_8h_down_mat,'SPI2_8h_down_miRNA.csv')
+
+##filter output to get miRNA results
+STM_2h_down_miRNA<-filter(STM_2h_down_result,STM_2h_down_result$source=='MIRNA')
+STM_8h_down_miRNA<-filter(STM_8h_down_result,STM_8h_down_result$source=='MIRNA')
+SPI1_2h_down_miRNA<-filter(SPI1_2h_down_result,SPI1_2h_down_result$source=='MIRNA')
+SPI1_8h_down_miRNA<-filter(SPI1_8h_down_result,SPI1_8h_down_result$source=='MIRNA')
+SPI2_2h_down_miRNA<-filter(SPI2_2h_down_result,SPI2_2h_down_result$source=='MIRNA')
+SPI2_8h_down_miRNA<-filter(SPI2_8h_down_result,SPI2_8h_down_result$source=='MIRNA')
+
+
+#select miRNA that are significant in STM and combine into one dataframe
+STM_2h_down_sig<-filter(STM_2h_down_miRNA,STM_2h_down_miRNA$p_value<0.05)
+STM_8h_down_sig<-filter(STM_8h_down_miRNA,STM_8h_down_miRNA$p_value<0.05)
+SPI1_2h_down_sig<-subset(SPI1_2h_down_miRNA,term_name=='hsa-miR-192-5p'|
+                           term_name=='hsa-miR-215-5p'|term_name=='hsa-miR-770-5p'|
+                           term_name=='hsa-miR-4712-5p')
+SPI2_2h_down_sig<-subset(SPI2_2h_down_miRNA,term_name=='hsa-miR-192-5p'|
+                           term_name=='hsa-miR-215-5p'|term_name=='hsa-miR-770-5p'|
+                           term_name=='hsa-miR-4712-5p')
+SPI1_8h_down_sig<-subset(SPI1_8h_down_miRNA,term_name=='hsa-miR-192-5p'|
+                           term_name=='hsa-miR-155-5p'|term_name=='hsa-miR-215-5p'|
+                           term_name=='hsa-miR-193b-3p'|term_name=='hsa-miR-100-5p'|
+                           term_name=='hsa-miR-16-5p'|term_name=='hsa-miR-1260b')
+SPI2_8h_down_sig<-subset(SPI2_8h_down_miRNA,term_name=='hsa-miR-192-5p'|
+                           term_name=='hsa-miR-155-5p'|term_name=='hsa-miR-215-5p'|
+                           term_name=='hsa-miR-193b-3p'|term_name=='hsa-miR-100-5p'|
+                           term_name=='hsa-miR-16-5p'|term_name=='hsa-miR-1260b')
+
+#add injection information and time point to data set
+STM_2h_down_sig$injection<-c('STM')
+STM_8h_down_sig$injection<-c('STM')
+SPI1_2h_down_sig$injection<-c('SPI1')
+SPI1_8h_down_sig$injection<-c('SPI1')
+SPI2_2h_down_sig$injection<-c('SPI2')
+SPI2_8h_down_sig$injection<-c('SPI2')
+mut_2h_down<-rbind(STM_2h_down_sig,SPI1_2h_down_sig,SPI2_2h_down_sig)
+mut_2h_down$time<-c('2.5hpi')
+mut_8h_down<-rbind(STM_8h_down_sig,SPI1_8h_down_sig,SPI2_8h_down_sig)
+mut_8h_down$time<-c('8hpi')
+mut_2h_down$log10pvalue<-(-log10(mut_2h_down$p_value))
+mut_8h_down$log10pvalue<-(-log10(mut_8h_down$p_value))
+write.csv(mut_2h_down,'mut_2h_down_miRNA.csv')
+write.csv(mut_8h_down,'mut_8h_down_miRNA.csv')
+
+#Plot results into bar graph looking at log10pvalue
+mut_2h_down$injection<-factor(mut_2h_down$injection,levels=c('SPI2','SPI1','STM'))
+mut_8h_down$injection<-factor(mut_8h_down$injection,levels=c('SPI2','SPI1','STM'))
+mut_down<-rbind(mut_2h_down,mut_8h_down)
+
+p <- ggplot(data=mut_2h_down, aes(x=reorder(term_name,log10pvalue), y=log10pvalue, fill=injection,scale_x_continuous(labels=abs)))+
+  geom_bar(stat="identity", position=position_dodge2(preserve = 'single'))+facet_grid(cols = vars(time),
+                                                                                      scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+p
+p+coord_flip()
+
+q <- ggplot(data=mut_8h_down, aes(x=reorder(term_name,log10pvalue), y=log10pvalue, fill=injection,scale_x_continuous(labels=abs)))+
+  geom_bar(stat="identity", position=position_dodge2(preserve = 'single'))+facet_grid(cols = vars(time),
+                                                                                      scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+q
+q+coord_flip()
